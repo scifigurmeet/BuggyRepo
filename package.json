@@ -1,0 +1,16 @@
+{
+  "name": "snyk-demo-app",
+  "version": "1.0.0",
+  "description": "A vulnerable application for illustrating Snyk usage.",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "express": "4.16.0",
+    "lodash": "4.17.4",
+    "mongoose": "5.0.0",
+    "marked": "0.3.5",
+    "request": "2.88.0"
+  }
+}
