@@ -1,0 +1,27 @@
+name: Security Scan
+on: [push, pull_request]
+
+jobs:
+  dependency-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      # # Free baseline gate — fails on high+ severity
+      # - name: npm audit
+      #   run: npm audit --audit-level=high
+
+      # Snyk gate (needs SNYK_TOKEN saved as a repo secret)
+      - name: Snyk test
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
