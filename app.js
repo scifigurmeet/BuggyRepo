@@ -1,7 +1,6 @@
 const express = require('express');
-const _ = require('lodash');
 const marked = require('marked');
-const request = require('request');
+const sanitizeHtml = require('sanitize-html');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -13,29 +12,37 @@ app.get('/', (req, res) => {
   res.send('Vulnerable App for Snyk Demonstration is running.');
 });
 
-// Example route using an outdated version of marked
-app.get('/markdown', (req, res) => {
-  const html = marked(req.query.md || '# Hello World');
+// Fix XSS: use sanitize-html on the marked output
+app.get('/markdown', async (req, res) => {
+  const input = req.query.md || '# Hello World';
+  // marked.parse is the modern API for marked
+  const rawHtml = await marked.parse(input);
+  const html = sanitizeHtml(rawHtml);
   res.send(html);
 });
 
-// Example route using an outdated version of lodash
+// Fix Prototype Pollution: avoid _.merge with user input, use Object.assign
 app.post('/merge', (req, res) => {
   let dest = {};
   let payload = req.body || {};
-  _.merge(dest, payload);
+  Object.assign(dest, payload);
   res.json(dest);
 });
 
-// Example route using deprecated request module
-app.get('/fetch', (req, res) => {
+// Fix SSRF: validate URL, replace request with native fetch
+app.get('/fetch', async (req, res) => {
   const targetUrl = req.query.url || 'http://example.com';
-  request(targetUrl, (error, response, body) => {
-    if (error) {
-      return res.status(500).send('Error fetching URL');
+  try {
+    const urlObj = new URL(targetUrl);
+    if (urlObj.hostname !== 'example.com') {
+      return res.status(400).send('Only example.com is allowed');
     }
+    const response = await fetch(targetUrl);
+    const body = await response.text();
     res.send(body);
-  });
+  } catch (error) {
+    res.status(500).send('Error fetching URL');
+  }
 });
 
 app.listen(port, () => {
